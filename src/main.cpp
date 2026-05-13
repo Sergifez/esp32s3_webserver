@@ -31,6 +31,7 @@ String ledState;
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 
+
 // Replaces placeholder with LED state value
 String processor(const String& var){
   Serial.println(var);
@@ -65,10 +66,15 @@ void setup(){
     Serial.println("An Error has occurred while mounting LittleFS");
     return;
   }
+    File file = LittleFS.open("/index.html", "r");
+  if (!file) {
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+  file.close();
 
   // Connect to Wi-Fi
-
-iniciarWiFiAP();
+  iniciarWiFiAP();
 
   // Print ESP32 Local IP Address
   Serial.println(WiFi.localIP());
@@ -83,8 +89,57 @@ iniciarWiFiAP();
     request->send(LittleFS, "/style.css", "text/css");
   });
 
+    // Route to load script.js file
+  server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(LittleFS, "/script.js", "text/javascript");
+  });
+
   // Route to set GPIO to HIGH
   server.on("/on", HTTP_GET, [](AsyncWebServerRequest *request){
+    led.setPixelColor(0, led.Color(255, 0, 0)); // Red
+    led.show();
+    request->send(LittleFS, "/index.html", String(), false, processor);
+  });
+  
+  // Route to set GPIO to LOW
+  server.on("/off", HTTP_GET, [](AsyncWebServerRequest *request){
+    led.setPixelColor(0, led.Color(0, 0, 0)); // Off
+    led.show();
+    request->send(LittleFS, "/index.html", String(), false, processor);
+  });
+
+server.on("/img/fondo.jpg", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(LittleFS, "/img/fondo.jpg", "image/jpeg");
+});
+
+server.on("/api/v1/led", HTTP_POST, [](AsyncWebServerRequest *request){},
+NULL,
+[](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+
+    String body = "";
+    for (size_t i = 0; i < len; i++) body += (char)data[i];
+
+    Serial.println("JSON recibido:");
+    Serial.println(body);
+
+    if (body.indexOf("blue") != -1) {
+        led.setPixelColor(0, led.Color(0, 0, 255));
+    }
+    else if (body.indexOf("yellow") != -1) {
+        led.setPixelColor(0, led.Color(255, 255, 0));
+    }
+    else if (body.indexOf("red") != -1) {
+        led.setPixelColor(0, led.Color(255, 0, 0));
+    }
+    else if (body.indexOf("off") != -1) {
+        led.setPixelColor(0, led.Color(0, 0, 0));
+    }
+    led.show();
+    request->send(200, "application/json", "{\"message\":\"LED updated\"}");
+});
+
+  // Route to set GPIO to HIGH
+  server.on("/led", HTTP_GET, [](AsyncWebServerRequest *request){
     led.setPixelColor(0, led.Color(255, 0, 0)); // Red
     led.show();
     request->send(LittleFS, "/index.html", String(), false, processor);

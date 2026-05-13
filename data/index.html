@@ -17,11 +17,6 @@
   <p>💡 GPIO state<strong> %STATE%</strong></p>
 
   <p>
-    <a href="/on"><button class="button">ON</button></a>
-    <a href="/off"><button class="button button2">OFF</button></a>
-  </p>
-
-  <p>
     <span class="sensor-labels">🌡️ Temperature</span>
     <span id="temperature">%TEMPERATURE%</span>
     <sup class="units">&deg;C</sup>
@@ -38,32 +33,24 @@
     <span id="pressure">%PRESSURE%</span>
     <sup class="units">hPa</sup>
   </p>
+    <div id="cam-container">
+    <!-- Cuando quieras activar el stream real, cambia fondo2.jpg por /stream -->
+    <img id="stream" src="/img/fondo.jpg">
+    <canvas id="overlay"></canvas>
+      <div class="led-control">
+            <p>LED Status: <span id="led-status">Unknown</span></p>
+            <button class="button" id="led-blue">BLUE</button>
+            <button class="button" id="led-yellow">YELLOW</button>
+            <button class="button" id="led-red">RED</button>
+            <button class="button" id="led-off">OFF</button>
+        </div>
+    <div id="controls">
+      <button id="btn-left">◀ Izquierda</button>
+      <button id="btn-right">Derecha ▶</button>
+      <a href="/on"><button class="button">ON</button></a>
+      <a href="/off"><button class="button button2">OFF</button></a>
+    </div>
+  </div>
 </body>
-
-<script>
-  const updateSensorValue = (id, endpoint) => {
-    fetch(endpoint)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Failed to fetch ${endpoint}`);
-        }
-        return response.text();
-      })
-      .then(data => {
-        document.getElementById(id).textContent = data;
-      })
-      .catch(error => {
-        console.error(error);
-        document.getElementById(id).textContent = 'Error';
-      });
-  };
-
-  // Update all sensors every 10 seconds
-  setInterval(() => {
-    updateSensorValue('temperature', '/temperature');
-    updateSensorValue('humidity', '/humidity');
-    updateSensorValue('pressure', '/pressure');
-  }, 10000);
-  
-</script>
+  <script src="script.js"></script>
 </html>
