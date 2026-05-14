@@ -13,12 +13,14 @@
 #include <LittleFS.h>
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
+#include <FtpServer.h>
 
 // ---------------- LED ----------------
 #define LED_PIN    48
 #define LED_COUNT  1
 #define BRIGHTNESS 50
 
+FtpServer ftpSrv;
 Adafruit_NeoPixel led(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 // Replace with your network credentials
@@ -72,6 +74,8 @@ void setup(){
     return;
   }
   file.close();
+
+  ftpSrv.begin("esp32","esp32");
 
   // Connect to Wi-Fi
   iniciarWiFiAP();
@@ -144,4 +148,5 @@ NULL,
 }
  
 void loop(){
+    ftpSrv.handleFTP();
 }
