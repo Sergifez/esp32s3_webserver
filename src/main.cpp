@@ -84,16 +84,6 @@ void setup(){
     request->send(LittleFS, "/index.html", String(), false, processor);
   });
   
-  // Route to load style.css file
-  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(LittleFS, "/style.css", "text/css");
-  });
-
-    // Route to load script.js file
-  server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(LittleFS, "/script.js", "text/javascript");
-  });
-
   // Route to set GPIO to HIGH
   server.on("/on", HTTP_GET, [](AsyncWebServerRequest *request){
     led.setPixelColor(0, led.Color(255, 0, 0)); // Red
@@ -107,10 +97,6 @@ void setup(){
     led.show();
     request->send(LittleFS, "/index.html", String(), false, processor);
   });
-
-server.on("/img/fondo.jpg", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send(LittleFS, "/img/fondo.jpg", "image/jpeg");
-});
 
 server.on("/api/v1/led", HTTP_POST, [](AsyncWebServerRequest *request){},
 NULL,
@@ -152,6 +138,7 @@ NULL,
     request->send(LittleFS, "/index.html", String(), false, processor);
   });
 
+  server.serveStatic("/", LittleFS, "/"); //sirve todos los archivos de la carpeta Data
   // Start server
   server.begin();
 }
