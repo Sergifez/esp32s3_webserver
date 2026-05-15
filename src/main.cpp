@@ -1,26 +1,25 @@
-/*
-  Rui Santos & Sara Santos - Random Nerd Tutorials
-  Complete project details at https://RandomNerdTutorials.com/esp32-web-server-littlefs/ 
-  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.
-  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
+#include <Arduino.h>
+#include <WiFi.h>
+#include <LittleFS.h>
+#include <Adafruit_NeoPixel.h>
+
+#include "fs_utils.h"
+#include "esp_http_server.h"
+#include "webserver_handlers.h"
+#include "ftp_server.h"
+#include "telemetry.h"
+#include "camera_module.h"
+
 
 // Import required libraries
-#include <WiFi.h>
-#include <ESPAsyncWebServer.h>
-#include <AsyncTCP.h>
 #include <FS.h>
-#include <LittleFS.h>
 #include <Wire.h>
-#include <Adafruit_NeoPixel.h>
-#include <FtpServer.h>
 
 // ---------------- LED ----------------
 #define LED_PIN    48
 #define LED_COUNT  1
 #define BRIGHTNESS 50
 
-FtpServer ftpSrv;
 Adafruit_NeoPixel led(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 // Replace with your network credentials
@@ -30,9 +29,24 @@ const char* password = "123456789";
 // Stores LED state
 String ledState;
 
-// Create AsyncWebServer object on port 80
-AsyncWebServer server(80);
+// Handle del servidor
+httpd_handle_t server = nullptr;
 
+// ----------------------
+// Iniciar servidor HTTP
+// ----------------------
+void startWebServer() {
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.server_port = 80;
+    config.uri_match_fn = httpd_uri_match_wildcard;
+
+    if (httpd_start(&server, &config) == ESP_OK) {
+        register_web_handlers(server);
+        Serial.println("Servidor HTTP iniciado en puerto 80");
+    } else {
+        Serial.println("Error iniciando servidor HTTP");
+    }
+}
 
 // Replaces placeholder with LED state value
 String processor(const String& var){
@@ -50,32 +64,37 @@ String processor(const String& var){
   return String();
 }
 
-  void iniciarWiFiAP() {
+// ----------------------
+// Iniciar WiFi en modo AP
+// ----------------------
+void iniciarWiFiAP() {
     WiFi.mode(WIFI_AP);
     WiFi.softAP("ESP32_TEST", "12345678");
     Serial.print("AP IP: ");
     Serial.println(WiFi.softAPIP());
 }
- 
+
+// ----------------------
+// SETUP
+// ----------------------
 void setup(){
-  // Serial port for debugging purposes
-  Serial.begin(115200);
-  led.begin();
-  led.setBrightness(BRIGHTNESS);
+  Serial.begin(115200);   // Serial port for debugging purposes
+  delay(300);
 
-  // Initialize LittleFS
-  if(!LittleFS.begin()){
-    Serial.println("An Error has occurred while mounting LittleFS");
-    return;
-  }
-    File file = LittleFS.open("/index.html", "r");
-  if (!file) {
-    Serial.println("Failed to open file for reading");
-    return;
-  }
-  file.close();
+  // --- Inicializar LED ---
+    led.begin();
+    led.setBrightness(BRIGHTNESS);
+    led.clear();
+    led.show();
 
-  ftpSrv.begin("esp32","esp32");
+  // --- Inicializar LittleFS ---
+  if (!fs_init()) {
+      Serial.println("❌ Error inicializando LittleFS");
+      return;
+  }
+
+  // --- Listar contenido ---
+  fs_list();
 
   // Connect to Wi-Fi
   iniciarWiFiAP();
@@ -83,70 +102,17 @@ void setup(){
   // Print ESP32 Local IP Address
   Serial.println(WiFi.localIP());
 
-  // Route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(LittleFS, "/index.html", String(), false, processor);
-  });
+  // Start the web server
+  startWebServer();
   
-  // Route to set GPIO to HIGH
-  server.on("/on", HTTP_GET, [](AsyncWebServerRequest *request){
-    led.setPixelColor(0, led.Color(255, 0, 0)); // Red
-    led.show();
-    request->send(LittleFS, "/index.html", String(), false, processor);
-  });
-  
-  // Route to set GPIO to LOW
-  server.on("/off", HTTP_GET, [](AsyncWebServerRequest *request){
-    led.setPixelColor(0, led.Color(0, 0, 0)); // Off
-    led.show();
-    request->send(LittleFS, "/index.html", String(), false, processor);
-  });
+  // FTP server
+  startFTP();
 
-server.on("/api/v1/led", HTTP_POST, [](AsyncWebServerRequest *request){},
-NULL,
-[](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-
-    String body = "";
-    for (size_t i = 0; i < len; i++) body += (char)data[i];
-
-    Serial.println("JSON recibido:");
-    Serial.println(body);
-
-    if (body.indexOf("blue") != -1) {
-        led.setPixelColor(0, led.Color(0, 0, 255));
-    }
-    else if (body.indexOf("yellow") != -1) {
-        led.setPixelColor(0, led.Color(255, 255, 0));
-    }
-    else if (body.indexOf("red") != -1) {
-        led.setPixelColor(0, led.Color(255, 0, 0));
-    }
-    else if (body.indexOf("off") != -1) {
-        led.setPixelColor(0, led.Color(0, 0, 0));
-    }
-    led.show();
-    request->send(200, "application/json", "{\"message\":\"LED updated\"}");
-});
-
-  // Route to set GPIO to HIGH
-  server.on("/led", HTTP_GET, [](AsyncWebServerRequest *request){
-    led.setPixelColor(0, led.Color(255, 0, 0)); // Red
-    led.show();
-    request->send(LittleFS, "/index.html", String(), false, processor);
-  });
-  
-  // Route to set GPIO to LOW
-  server.on("/off", HTTP_GET, [](AsyncWebServerRequest *request){
-    led.setPixelColor(0, led.Color(0, 0, 0)); // Off
-    led.show();
-    request->send(LittleFS, "/index.html", String(), false, processor);
-  });
-
-  server.serveStatic("/", LittleFS, "/"); //sirve todos los archivos de la carpeta Data
-  // Start server
-  server.begin();
+  // Inicializar módulo cámara y registrar handlers ---
+  camera_init();
+  camera_register_handlers(); 
 }
  
 void loop(){
-    ftpSrv.handleFTP();
+    handleFTP();
 }
