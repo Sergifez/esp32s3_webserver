@@ -64,85 +64,73 @@ camera_config_t cam_cfg = {
     .grab_mode    = CAMERA_GRAB_WHEN_EMPTY
 };
 
-static esp_err_t stream_handler(httpd_req_t *req){
-  camera_fb_t * fb = NULL;
-  esp_err_t res = ESP_OK;
-  size_t _jpg_buf_len = 0;
-  uint8_t * _jpg_buf = NULL;
-  char * part_buf[64];
+esp_err_t stream_handler(httpd_req_t *req) {
+    camera_fb_t *fb = NULL;
+    esp_err_t res = ESP_OK;
+    size_t jpg_len = 0;
+    uint8_t *jpg_buf = NULL;
+    char part_buf[64];
 
-  res = httpd_resp_set_type(req, _STREAM_CONTENT_TYPE);
-  if(res != ESP_OK){
-    return res;
-  }
+    res = httpd_resp_set_type(req, _STREAM_CONTENT_TYPE);
+    if (res != ESP_OK) return res;
 
-  while(true){
-    fb = esp_camera_fb_get();
-    if (!fb) {
-      res = ESP_FAIL;
-    } else {
-      if(fb->format != PIXFORMAT_JPEG){
-        bool jpeg_converted = frame2jpg(fb, 80, &_jpg_buf, &_jpg_buf_len);
-        esp_camera_fb_return(fb);
-        fb = NULL;
-        if(!jpeg_converted){
-          res = ESP_FAIL;
+    while (true) {
+
+        fb = esp_camera_fb_get();
+        if (!fb) {
+            res = ESP_FAIL;
+            break;
         }
-      } else {
-        _jpg_buf_len = fb->len;
-        _jpg_buf = fb->buf;
-      }
+
+        // Si ya viene en JPEG → NO convertir
+        if (fb->format == PIXFORMAT_JPEG) {
+            jpg_buf = fb->buf;
+            jpg_len = fb->len;
+        } 
+        else {
+            // Convertir solo si es necesario
+            if (!frame2jpg(fb, 80, &jpg_buf, &jpg_len)) {
+                esp_camera_fb_return(fb);
+                res = ESP_FAIL;
+                break;
+            }
+        }
+
+        // Enviar cabecera
+        size_t hlen = snprintf(part_buf, sizeof(part_buf), _STREAM_PART, jpg_len);
+        res = httpd_resp_send_chunk(req, part_buf, hlen);
+        if (res != ESP_OK) break;
+
+        // Enviar frame
+        res = httpd_resp_send_chunk(req, (const char *)jpg_buf, jpg_len);
+        if (res != ESP_OK) break;
+
+        // Enviar boundary
+        res = httpd_resp_send_chunk(req, _STREAM_BOUNDARY, strlen(_STREAM_BOUNDARY));
+        if (res != ESP_OK) break;
+
+        // Liberar memoria correctamente
+        if (fb->format != PIXFORMAT_JPEG) {
+            free(jpg_buf);
+        }
+        esp_camera_fb_return(fb);
+
+        jpg_buf = NULL;
+        fb = NULL;
     }
 
-    if(res == ESP_OK){
-      size_t hlen = snprintf((char *)part_buf, 64, _STREAM_PART, _jpg_buf_len);
-      res = httpd_resp_send_chunk(req, (const char *)part_buf, hlen);
-    }
-    if(res == ESP_OK){
-      res = httpd_resp_send_chunk(req, (const char *)_jpg_buf, _jpg_buf_len);
-    }
-    if(res == ESP_OK){
-      res = httpd_resp_send_chunk(req, _STREAM_BOUNDARY, strlen(_STREAM_BOUNDARY));
-    }
+    if (fb) esp_camera_fb_return(fb);
+    if (jpg_buf && fb == NULL) free(jpg_buf);
 
-    if(fb){
-      esp_camera_fb_return(fb);
-      fb = NULL;
-      _jpg_buf = NULL;
-    } else if(_jpg_buf){
-      free(_jpg_buf);
-      _jpg_buf = NULL;
-    }
-
-    if(res != ESP_OK){
-      break;
-    }
-  }
-  return res;
+    return res;
 }
+
 
 void camera_init() {
     esp_err_t err = esp_camera_init(&cam_cfg);
     if (err != ESP_OK) {
         Serial.printf("❌ Error cámara: 0x%x\n", err);
     } else {
-        Serial.println("📸 Cámara inicializada");
+        Serial.println("📸 Cámara ienicializada");
     }
 }
-
-void camera_register_handlers() {
-    httpd_uri_t cam_stream = {
-        .uri       = "/stream",
-        .method    = HTTP_GET,
-        .handler   = stream_handler,
-        .user_ctx  = NULL
-    };
-
-    esp_err_t err = httpd_register_uri_handler(server, &cam_stream);
-    if (err == ESP_OK) {
-        Serial.println("📸 Handler /stream registrado correctamente");
-    } else {
-        Serial.printf("❌ Error registrando /stream: %d\n", err);
-    }
-}
-

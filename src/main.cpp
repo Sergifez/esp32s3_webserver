@@ -110,7 +110,6 @@ void setup(){
 
   // Inicializar módulo cámara y registrar handlers ---
   camera_init();
-  camera_register_handlers(); 
 }
  
 void loop(){

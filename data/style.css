@@ -1,89 +1,96 @@
-/***
-  Rui Santos & Sara Santos - Random Nerd Tutorials
-  Complete project details at https://RandomNerdTutorials.com/esp32-web-server-littlefs/ 
-***/
-
-html {
-  font-family: Arial;
-  display: inline-block;
-  margin: 0 auto;
-  text-align: center;
-  background-color: #f4f4f4;
-  color: #333;
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000;
 }
 
-h1 {
-  color: #0F3376;
-  padding: 2vh 1rem;
-  font-size: 2rem;
-  margin-bottom: 1rem;
+body {
+  font-family: 'Orbitron', sans-serif;
 }
 
-p {
-  font-size: 1.5rem;
-  margin: 1rem auto;
-  max-width: 600px;
+#cam-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh; /* pantalla completa */
+  overflow: hidden;
+  background: black;
 }
 
-.button {
-  display: inline-block;
-  background-color: #00A676;
-  border: none;
-  border-radius: 6px;
-  color: white;
-  padding: 14px 32px;
-  text-decoration: none;
-  font-size: 1.2rem;
-  margin: 6px 10px;
+#stream {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vw;     /* SIEMPRE ancho completo */
+  height: auto;
+  transform: translate(-50%, -50%);
+  object-fit: cover; /* recorta alto */
+}
+
+#overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+
+#controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+}
+
+#controls button {
+  padding: 12px 20px;
+  font-size: 18px;
+  font-family: 'Orbitron', sans-serif;
+  background: #222;
+  color: #0ff;
+  border: 2px solid #0ff;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.1s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  width: 160px;
 }
 
-.button:hover {
-  background-color: #0077a8;
-  transform: translateY(-1px);
+#controls button:active {
+  background: #0ff;
+  color: #000;
 }
 
-.button2 {
-  background-color: #f44336;
+#led-buttons {
+  position: absolute;
+  bottom: 80px; /* debajo de los botones de dirección */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 15px;
 }
 
-.button2:hover {
-  background-color: #d9362c;
+.led-btn {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255,255,255,0.5);
 }
 
-.units {
-  font-size: 1.2rem;
-  color: #555;
-  margin-left: 4px;
-}
-
-.sensor-labels {
-  font-size: 1.5rem;
-  font-weight: bold;
-  vertical-align: middle;
-  padding-bottom: 15px;
-}
-
-#video-container {
-    position: relative;
-    width: 100%;
-    height: auto;
-    overflow: hidden;
-}
-
-#cam-stream {
-    width: 100%;
-    display: block;
-}
-
-#hud-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* HUD no bloquea clics */
-}
+/* Colores reales */
+.led-btn[data-color="blue"]   { background: rgb(0,0,255); }
+.led-btn[data-color="yellow"] { background: rgb(255,255,0); }
+.led-btn[data-color="red"]    { background: rgb(255,0,0); }
+.led-btn[data-color="off"]    { background: rgb(0,0,0); }
+.led-btn[data-color="orange"]    { background: rgb(255,165,0); }
+.led-btn[data-color="purple"]    { background: rgb(128,0,128); }
+.led-btn[data-color="pink"]      { background: rgb(255,105,180); }
+.led-btn[data-color="cyan"]      { background: rgb(0,255,255); }
+.led-btn[data-color="magenta"]   { background: rgb(255,0,255); }
+.led-btn[data-color="white"]     { background: rgb(255,255,255); }
+.led-btn[data-color="warmwhite"] { background: rgb(255,244,229); }
+.led-btn[data-color="lime"]      { background: rgb(0,255,0); }
+.led-btn[data-color="skyblue"]   { background: rgb(135,206,235); }
+.led-btn[data-color="gold"]      { background: rgb(255,215,0); }

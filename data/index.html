@@ -1,64 +1,38 @@
 <!DOCTYPE html>
-<!-- 
-  Rui Santos & Sara Santos - Random Nerd Tutorials
-  Complete project details at https://RandomNerdTutorials.com/esp32-web-server-littlefs/ 
--->
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>ESP32 LittleFS Web Server</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="data:,">
-  <link rel="stylesheet" type="text/css" href="style.css">
+  <title>HUD</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-
-    <div id="video-container">
-      <img id="cam-stream" src="/stream" alt="camera stream">
-      <div id="hud-container">
-        <canvas id="hud"></canvas>
-      </div>
-    </div>
-
-  <h1>ESP32 LittleFS Web Server</h1>
-
-  <p>💡 GPIO state<strong> %STATE%</strong></p>
-
-  <p>
-    <span class="sensor-labels">🌡️ Temperature</span>
-    <span id="temperature">%TEMPERATURE%</span>
-    <sup class="units">&deg;C</sup>
-  </p>
-
-  <p>
-    <span class="sensor-labels">💧 Humidity</span>
-    <span id="humidity">%HUMIDITY%</span>
-    <sup class="units">&#37;</sup>
-  </p>
-
-  <p>
-    <span class="sensor-labels">↕️ Pressure</span>
-    <span id="pressure">%PRESSURE%</span>
-    <sup class="units">hPa</sup>
-  </p>
-    <div id="cam-container">
+  <div id="cam-container">
     <!-- Cuando quieras activar el stream real, cambia fondo2.jpg por /stream -->
-    <img id="stream" src="/img/fondo2.jpg">
+    <img id="stream" src="/stream" alt="Video Stream">
     <canvas id="overlay"></canvas>
-      <div class="led-control">
-            <p>LED Status: <span id="led-status">Unknown</span></p>
-            <button class="button" id="led-blue">BLUE</button>
-            <button class="button" id="led-yellow">YELLOW</button>
-            <button class="button" id="led-red">RED</button>
-            <button class="button" id="led-off">OFF</button>
-        </div>
+
     <div id="controls">
       <button id="btn-left">◀ Izquierda</button>
       <button id="btn-right">Derecha ▶</button>
-      <a href="/on"><button class="button">ON</button></a>
-      <a href="/off"><button class="button button2">OFF</button></a>
     </div>
+<div id="led-buttons">
+<button class="led-btn" data-color="orange"></button>
+<button class="led-btn" data-color="purple"></button>
+<button class="led-btn" data-color="pink"></button>
+<button class="led-btn" data-color="cyan"></button>
+<button class="led-btn" data-color="magenta"></button>
+<button class="led-btn" data-color="white"></button>
+<button class="led-btn" data-color="warmwhite"></button>
+<button class="led-btn" data-color="lime"></button>
+<button class="led-btn" data-color="skyblue"></button>
+<button class="led-btn" data-color="gold"></button>
+
+</div>
+
   </div>
+
+  <script src="/script.js"></script>
 </body>
-  <script src="script.js"></script>
 </html>
+
